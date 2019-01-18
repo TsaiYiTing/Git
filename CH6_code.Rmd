@@ -1,0 +1,366 @@
+---
+title: "Code for UserNetR"
+author: "yi-ting,tsai"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Code for UserNetR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+# Chapter 6 - Advanced Graphics
+
+## Setup
+```{r}
+#install.packages('statnet')
+```
+```{r, eval=FALSE}
+require(statnet)
+require(UserNetR)
+require(RColorBrewer)
+require(intergraph)
+options(width=50)
+```
+#Chapter 6
+本章探討了更專業的網絡圖形技術，以及演示如何製作一些簡單的基於Web的互動式網絡圖。
+
+以及一些允許創建可以發佈到網頁的互動式網絡圖的package。
+
+#1 networkD3 package( simpleNetwork()、forceNetwork())
+
+#目前只允許使用分類分組變量。如果節點具有數字ID，則必須具有數字ID從0開始。
+
+## TKPlot
+```{r, eval=FALSE}
+require(intergraph)
+require(igraph)
+#該網絡對應於2002年在印度尼西亞巴厘島進行爆炸的17名恐怖分子之間的聯繫。
+data(Bali)
+iBali <- asIgraph(Bali)#將資料轉換成Igraph
+Coord <- tkplot(iBali, vertex.size=3, 
+                vertex.label=V(iBali)$role, 
+                vertex.color="darkgreen",
+                vertex.shape='rectangle',
+                vertex.label.cex=1.0,
+                vertex.label.color='black',
+                edge.color="black")#the new coordinates of the vertices
+Coord
+```
+
+```{r}
+#goal: use the coordinates to produce a ﬁnal network diagram
+MCoords <- tkplot.getcoords(Coord)
+plot(iBali, layout=MCoords, vertex.size=5, 
+             vertex.label=NA, vertex.color="lightblue")
+
+```
+```{r}
+p <- make_ring(10)
+id<-tkplot(p)
+#座標
+MCoords <- tkplot.getcoords(id)
+#座標
+tk_coords(tkp.id=id, norm = FALSE)
+
+
+tkconfigure(igraph:::.tkplot.get(id)$canvas, "bg"="lightyellow") 
+#關閉tkplot
+tk_close(tkp.id=12)
+#關閉所有Tk圖
+tk_off()
+```
+## NetworkD3
+```{r, eval=FALSE}
+library(networkD3)
+src <- c("A","A","B","B","C","E")
+target <- c("B","C","C","D","B","C")
+net_edge <- data.frame(src, target)
+net_edge
+#print a plot
+simpleNetwork(net_edge)
+```
+
+## NetworkD3 
+```{r, eval=FALSE}
+# save the interactive network 
+net_D3 <- simpleNetwork(net_edge) 
+saveNetwork(net_D3,file = 'Net_test1.html',
+            selfcontained=TRUE)
+```
+
+## ForceNetwork
+```{r, eval=FALS}
+iBali_edge <- get.edgelist(iBali)
+iBali_edge <- iBali_edge - 1
+iBali_edge <- data.frame(iBali_edge)
+iBali_nodes <- data.frame(NodeID=as.numeric(V(iBali)-1),
+                          Group=V(iBali)$role,#根據role做分群
+                          Nodesize=(degree(iBali)))
+```
+
+#get.edgelist用法
+```{r}
+x <- matrix(c(0,2,1,1,2,0,1,0,1,1,0,1,1,0,1,0), 4, 4)
+rownames(x) <- colnames(x) <- LETTERS[1:4]
+x
+#library(igraph)
+g <- graph.adjacency(x)
+g
+get.edgelist(g)
+```
+#V()圖的頂點
+```{r}
+V(iBali)$role
+V(iBali)
+#?V()
+degree(iBali)
+```
+
+```{r}
+forceNetwork(Links = iBali_edge, Nodes = iBali_nodes,
+            Source = "X1", Target = "X2",#from X1 to X2
+            NodeID = "NodeID",Nodesize = "Nodesize",
+            Group = "Group", opacity = 0.8,#proportion opaque
+            legend=TRUE)
+iBali_nodes$Group
+```
+
+```{r}
+#悲慘人物數據庫
+# Load data
+data(MisLinks)
+data(MisNodes)
+# Plot
+forceNetwork(Links = MisLinks, Nodes = MisNodes, Source ="source",
+ Target ="target", Value ="value", NodeID ="name",
+ Group ="group", opacity = 0.7,
+ colourScale = JS("d3.scaleOrdinal(d3.schemeCategory20);"))
+MisNodes$group
+```
+
+## ForceNetwork save
+```{r, eval=FALSE}
+#this can be saved to an external file. 
+net_D3 <- forceNetwork(Links = iBali_edge, 
+            Nodes = iBali_nodes,
+            Source = "X1", Target = "X2",
+            NodeID = "NodeID",Nodesize = "Nodesize",
+            Group = "Group", opacity = 0.8,
+            legend=TRUE)
+saveNetwork(net_D3,file = 'Net_test2.html',
+            selfcontained=TRUE)
+```
+
+#2 visNetwork package
+#The nodes data frame should include an id column, and
+the edges data frame should have from and columns.
+
+## visNetwork EX
+```{r}
+require(visNetwork, quietly = TRUE)
+nodes <- data.frame(id = 1:3)
+nodes
+edges <- data.frame(from = c(1,2), to = c(1,3))
+edges
+visNetwork(nodes, edges, width = "100%")
+```
+
+## visNetwork
+```{r, eval=FALSE}
+library(visNetwork)
+iBali_edge <- get.edgelist(iBali)
+iBali_edge <- data.frame(from = iBali_edge[,1],
+                         to = iBali_edge[,2])
+iBali_nodes <- data.frame(id = as.numeric(V(iBali)))
+visNetwork(iBali_nodes, iBali_edge, width = "100%")#width =空間
+```
+
+#6.2
+#6.2.1
+#對於關聯性比較有興趣
+
+#辛普森中15個角色之間的主要互動關係。
+
+## arcdiagram 弧狀圖
+```{r, eval=FALSE}
+require(devtools)
+#install_github("gastonstat/arcdiagram")
+```
+
+## Simpsons setup
+```{r, eval=FALSE}
+require(arcdiagram)
+require(igraph)
+require(intergraph)
+data(Simpsons)
+iSimp <- asIgraph(Simpsons)
+iSimp
+simp_edge<- get.edgelist(iSimp)
+simp_edge 
+```
+
+## arcdiagram 2
+```{r, eval=FALSE}
+arcplot(simp_edge)
+```
+
+## Simpsons 2
+```{r, eval=FALSE}
+s_grp <- V(iSimp)$group
+s_col = c("#a6611a", "#dfc27d","#80cdc1","#018571")
+cols = s_col[s_grp]#將不同的群給於不同顏色
+node_deg<-degree(iSimp)
+```
+
+```{r}
+V(iSimp)$group
+#(1 = family,2 = work, 3 = school, 4 = neighborhood)
+node_deg#單向degree=1，雙向degree=2，合計
+```
+
+## arcdiagram 將不同的群給於不同顏色，依照degree給於原點大小
+```{r, eval=FALSE}
+arcplot(simp_edge, lwd.arcs=2, cex.nodes=node_deg/2,
+        labels=V(iSimp)$vertex.names,
+        col.labels="darkgreen",font=1,
+        pch.nodes=21,line=1,col.nodes = cols,
+        bg.nodes = cols, show.nodes = TRUE)
+```
+## Cleanup
+```{r, eval=FALSE}
+detach("package:arcdiagram", unload=TRUE)
+detach("package:igraph", unload=TRUE)
+```
+
+#6.2.2
+## FIFA setup
+```{r, eval=FALSE}
+require(statnet)
+#install.packages('circlize')
+require(circlize)
+data(FIFA_Nether)
+FIFAm <- as.sociomatrix(FIFA_Nether,attrname='passes')
+names <- c("GK1","DF3","DF4","DF5","MF6",
+           "FW7","FW9","MF10","FW11","DF2","MF8")
+rownames(FIFAm) = names
+colnames(FIFAm) = names
+
+#將聯繫低於10的做清洗
+FIFAm[FIFAm < 10] <- 0
+
+FIFAm#關係強度矩陣
+
+```
+```{r}
+FIFA_try <- as.sociomatrix(FIFA_Nether)
+FIFA_try#0為沒關係，1為有關係
+```
+## Chord diagram 2
+```{r, eval=FALSE}
+grid.col <- c("#AA3939",rep("#AA6C39",4),
+              rep("#2D882D",3),rep("#226666",3))
+#將11個變數給於四種顏色
+
+par(mfrow=c(1,2))
+chordDiagram(FIFAm,directional = TRUE,
+             grid.col = grid.col,
+             order=c("GK1","DF2","DF3","DF4","DF5",
+                     "MF6","MF8","MF10","FW7",
+                     "FW9","FW11"))
+
+chordDiagram(FIFAm,directional = FALSE,
+             grid.col = grid.col,
+             order=c("GK1","DF2","DF3","DF4","DF5",
+                     "MF6","MF8","MF10","FW7",
+                     "FW9","FW11"))
+```
+
+#################################################
+```{r}
+edges <- read.csv("star-wars-network-edges.csv")
+head(edges)
+nodes <- read.csv("star-wars-network-nodes.csv")
+head(nodes)
+
+library(igraph)
+g <- graph_from_data_frame(d=edges, vertices=nodes, directed=FALSE)
+g
+
+V(g)$name
+vertex_attr(g)
+E(g)
+edge_attr(g)
+g[]
+par(mar=c(0,0,0,0))
+plot(g,
+     vertex.color = "grey", 
+     vertex.label.color = "black", 
+     vertex.label.cex = 0.75, 
+     edge.curved= 0.25, 
+     edge.color="grey20") 
+
+g1 = as.matrix(g[])
+
+library(intergraph)
+detach("package:igraph", unload=TRUE)
+#g1 = graph.edgelist(g1)
+g1 = as.network(g1)
+delete.vertices(g1,isolates(g1))
+
+length(isolates(g1))
+gplot(g1,gmode="graph",displaylabels=TRUE,
+      vertex.col="grey",vertex.cex=1.3,
+      label.col = "black",
+      label.cex = 0.75)
+
+```
+## NetworkD3
+```{r, eval=FALSE}
+library(networkD3)
+net_edge <-data.frame(edges$source,edges$target)
+simpleNetwork(net_edge)
+```
+#arcdiagram EX
+```{r, eval=FALSE}
+simp_edge<- get.edgelist(g)
+simp_edge 
+arcplot(simp_edge)
+
+node_deg<-degree(g)
+simp_edge
+arcplot(simp_edge, lwd.arcs=2, cex.nodes=node_deg/2,
+        labels=V(g)$vertex.names,
+        col.labels="darkgreen",font=1,
+        pch.nodes=21,line=1, show.nodes = TRUE)
+```
+## Cleanup
+```{r, eval=FALSE}
+detach("package:arcdiagram", unload=TRUE)
+detach("package:igraph", unload=TRUE)
+```
+#6.2.2EX
+## FIFA setup
+```{r, eval=FALSE}
+require(statnet)
+#install.packages('circlize')
+require(circlize)
+
+gm=as.sociomatrix(g1)
+gm_try = as.matrix(g[])
+nrow(gm_try)
+grid.col <- c(rep("#AA3939",2),rep("#AA6C39",8),
+              rep("#2D882D",6),rep("#226666",6))
+#將11個變數給於四種顏色
+
+par(mfrow=c(1,2))
+chordDiagram(gm_try,directional = TRUE,
+             grid.col = grid.col)
+```
+

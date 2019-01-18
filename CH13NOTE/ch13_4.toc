@@ -1,0 +1,6 @@
+\beamer@sectionintoc {1}{Review-example}{3}{0}{1}
+\beamer@sectionintoc {2}{CNN Architectures}{15}{0}{2}
+\beamer@subsectionintoc {2}{1}{LeNet-5 architecture}{18}{0}{2}
+\beamer@subsectionintoc {2}{2}{AlexNet architectures}{22}{0}{2}
+\beamer@subsectionintoc {2}{3}{GoogLeNet architectures}{27}{0}{2}
+\beamer@subsectionintoc {2}{4}{ResNet architectures}{30}{0}{2}
